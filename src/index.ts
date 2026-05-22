@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Client, GatewayIntentBits, EmbedBuilder, TextChannel } from 'discord.js';
+import { Client, GatewayIntentBits, EmbedBuilder, TextChannel, REST, Routes, SlashCommandBuilder } from 'discord.js';
 import express, { Request, Response } from 'express';
 
 const rawToken = process.env.DISCORD_BOT_TOKEN;
@@ -19,12 +19,60 @@ const CHANNEL_ID: string = rawChannelId;
 const MPLUS_PING_ROLE_ID = process.env.MPLUS_PING_ROLE_ID;
 const ROSTER_PING_ROLE_ID = process.env.ROSTER_PING_ROLE_ID;
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL;
+const GUILD_ID = process.env.DISCORD_GUILD_ID;
 const PORT = process.env.PORT ?? '3000';
+
+const commands = [
+  new SlashCommandBuilder()
+    .setName('resend')
+    .setDescription('Re-send the last N M+ exclusion submissions from the Google Form')
+    .addIntegerOption(opt =>
+      opt.setName('count')
+        .setDescription('Number of submissions to resend (1-20)')
+        .setRequired(true)
+        .setMinValue(1)
+        .setMaxValue(20)
+    )
+    .toJSON(),
+];
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-client.once('ready', () => {
+client.once('ready', async () => {
   console.log(`Bot ready: ${client.user?.tag}`);
+  if (GUILD_ID) {
+    const rest = new REST().setToken(BOT_TOKEN);
+    await rest.put(Routes.applicationGuildCommands(client.user!.id, GUILD_ID), { body: commands });
+    console.log('Slash commands registered.');
+  }
+});
+
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isChatInputCommand() || interaction.commandName !== 'resend') return;
+
+  if (!APPS_SCRIPT_URL) {
+    await interaction.reply({ content: 'APPS_SCRIPT_URL is not configured.', ephemeral: true });
+    return;
+  }
+
+  const count = interaction.options.getInteger('count', true);
+  await interaction.deferReply();
+
+  try {
+    const url = new URL(APPS_SCRIPT_URL);
+    url.searchParams.set('secret', WEBHOOK_SECRET ?? '');
+    url.searchParams.set('n', String(count));
+    const response = await fetch(url.toString());
+    const data = await response.json() as { ok?: boolean; error?: string; sent?: number };
+    if (data.ok) {
+      await interaction.editReply(`Resent the last **${data.sent}** M+ submission(s).`);
+    } else {
+      await interaction.editReply(`Failed: ${data.error ?? 'Unknown error'}`);
+    }
+  } catch {
+    await interaction.editReply('Failed to contact Apps Script. Check the logs.');
+  }
 });
 
 client.login(BOT_TOKEN);

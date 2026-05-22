@@ -1,6 +1,22 @@
 // Shared config
-var BOT_BASE_URL = 'https://YOUR_RENDER_URL';
-var WEBHOOK_SECRET = 'YOUR_WEBHOOK_SECRET';
+var BOT_BASE_URL = 'https://team-phoenix-qx42.onrender.com';
+var WEBHOOK_SECRET = 'teamPhoenixPPCBot';
+
+// -------------------------------------------------------
+// Web App entry point (used by the /resend Discord command)
+// Deploy this script as a Web App to enable /resend
+// -------------------------------------------------------
+function doGet(e) {
+  var secret = (e.parameter && e.parameter.secret) || '';
+  if (WEBHOOK_SECRET && secret !== WEBHOOK_SECRET) {
+    return ContentService.createTextOutput(JSON.stringify({ error: 'Unauthorized' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  var n = Math.min(parseInt(e.parameter.n) || 1, 20);
+  sendLastNMplusSubmissions(n);
+  return ContentService.createTextOutput(JSON.stringify({ ok: true, sent: n }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
 
 // -------------------------------------------------------
 // M+ Exclusion Form
@@ -45,12 +61,12 @@ function onMplusFormSubmit(e) {
   sendToBot('/mplus', payload);
 }
 
-// Re-send the last N M+ submissions (for testing)
-function sendLastNMplusSubmissions() {
-  var N = 2;
+// Re-send the last N M+ submissions
+function sendLastNMplusSubmissions(n) {
+  n = n || 2;
   var form = FormApp.getActiveForm();
   var responses = form.getResponses();
-  var start = Math.max(0, responses.length - N);
+  var start = Math.max(0, responses.length - n);
 
   for (var i = start; i < responses.length; i++) {
     onMplusFormSubmit({ response: responses[i] });

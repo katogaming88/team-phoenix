@@ -15,3 +15,7 @@ services:
         sync: false
       - key: WEBHOOK_SECRET
         sync: false
+      - key: DISCORD_GUILD_ID
+        sync: false
+      - key: APPS_SCRIPT_URL
+        sync: false
