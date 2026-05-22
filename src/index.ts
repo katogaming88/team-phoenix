@@ -39,7 +39,7 @@ const commands = [
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-client.once('ready', async () => {
+client.once('clientReady', async () => {
   console.log(`Bot ready: ${client.user?.tag}`);
   if (GUILD_ID) {
     const rest = new REST().setToken(BOT_TOKEN);
@@ -48,16 +48,25 @@ client.once('ready', async () => {
   }
 });
 
+client.on('error', (error) => {
+  console.error('Discord client error:', error);
+});
+
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isChatInputCommand() || interaction.commandName !== 'resend') return;
 
   if (!APPS_SCRIPT_URL) {
-    await interaction.reply({ content: 'APPS_SCRIPT_URL is not configured.', ephemeral: true });
+    await interaction.reply({ content: 'APPS_SCRIPT_URL is not configured.', ephemeral: true }).catch(() => null);
     return;
   }
 
   const count = interaction.options.getInteger('count', true);
-  await interaction.deferReply();
+
+  try {
+    await interaction.deferReply();
+  } catch {
+    return;
+  }
 
   try {
     const url = new URL(APPS_SCRIPT_URL);
@@ -71,7 +80,7 @@ client.on('interactionCreate', async (interaction) => {
       await interaction.editReply(`Failed: ${data.error ?? 'Unknown error'}`);
     }
   } catch {
-    await interaction.editReply('Failed to contact Apps Script. Check the logs.');
+    await interaction.editReply('Failed to contact Apps Script. Check the logs.').catch(() => null);
   }
 });
 
