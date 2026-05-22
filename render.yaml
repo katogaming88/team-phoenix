@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: team-phoenix
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      - key: DISCORD_CHANNEL_ID
+        sync: false
+      - key: MPLUS_PING_ROLE_ID
+        sync: false
+      - key: ROSTER_PING_ROLE_ID
+        sync: false
+      - key: WEBHOOK_SECRET
+        sync: false
