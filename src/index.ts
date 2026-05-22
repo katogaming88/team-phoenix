@@ -75,7 +75,7 @@ client.on('interactionCreate', async (interaction) => {
     const response = await fetch(url.toString());
     const data = await response.json() as { ok?: boolean; error?: string; sent?: number };
     if (data.ok) {
-      await interaction.editReply(`Resent the last **${data.sent}** M+ submission(s).`);
+      await interaction.editReply(`Resending the last **${data.sent}** M+ submission(s).`);
     } else {
       await interaction.editReply(`Failed: ${data.error ?? 'Unknown error'}`);
     }
