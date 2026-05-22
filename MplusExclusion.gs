@@ -1,6 +1,9 @@
-// Shared config
+// M+ Exclusion Form Script
+// Paste this into the Apps Script editor for the M+ Exclusion Google Form
+
 var BOT_BASE_URL = 'https://team-phoenix-qx42.onrender.com';
 var WEBHOOK_SECRET = 'teamPhoenixPPCBot';
+var MPLUS_FORM_ID = '1a9Ot8wfJp33f6BdbY3NDyq1A-mU7YME31foclhY5Qu8';
 
 // -------------------------------------------------------
 // Web App entry point (used by the /resend Discord command)
@@ -19,8 +22,7 @@ function doGet(e) {
 }
 
 // -------------------------------------------------------
-// M+ Exclusion Form
-// Attach this trigger to your M+ Exclusion Google Form
+// Trigger: On form submit
 // -------------------------------------------------------
 function onMplusFormSubmit(e) {
   var responses = e.response.getItemResponses();
@@ -61,10 +63,10 @@ function onMplusFormSubmit(e) {
   sendToBot('/mplus', payload);
 }
 
-// Re-send the last N M+ submissions
+// Re-send the last N submissions (also called by /resend Discord command)
 function sendLastNMplusSubmissions(n) {
   n = n || 2;
-  var form = FormApp.getActiveForm();
+  var form = FormApp.openById(MPLUS_FORM_ID);
   var responses = form.getResponses();
   var start = Math.max(0, responses.length - n);
 
@@ -76,54 +78,6 @@ function sendLastNMplusSubmissions(n) {
   }
 }
 
-// -------------------------------------------------------
-// Roster Application Form
-// Attach this trigger to your Roster Google Form
-// -------------------------------------------------------
-function onRosterFormSubmit(e) {
-  var responses = e.response.getItemResponses();
-  var data = {};
-
-  for (var i = 0; i < responses.length; i++) {
-    var item = responses[i];
-    data[item.getItem().getTitle()] = item.getResponse();
-  }
-
-  Logger.log('Roster form fields: ' + Object.keys(data).join(', '));
-
-  var characterName = data['Character Name'] || '';
-  var classSpec = data['Class / Spec'] || '';
-  var notes = data['Notes'] || data['Optional Notes'] || '';
-  var submittedAt = new Date().toISOString();
-
-  var payload = JSON.stringify({
-    characterName: characterName,
-    classSpec: classSpec,
-    notes: notes,
-    submittedAt: submittedAt
-  });
-
-  sendToBot('/roster', payload);
-}
-
-// Re-send the last N roster submissions (for testing)
-function sendLastNRosterSubmissions() {
-  var N = 2;
-  var form = FormApp.getActiveForm();
-  var responses = form.getResponses();
-  var start = Math.max(0, responses.length - N);
-
-  for (var i = start; i < responses.length; i++) {
-    onRosterFormSubmit({ response: responses[i] });
-    if (i < responses.length - 1) {
-      Utilities.sleep(2000);
-    }
-  }
-}
-
-// -------------------------------------------------------
-// Shared helper
-// -------------------------------------------------------
 function sendToBot(path, payload) {
   var options = {
     method: 'post',
