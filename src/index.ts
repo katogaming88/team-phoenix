@@ -21,6 +21,7 @@ const ROSTER_PING_ROLE_ID = process.env.ROSTER_PING_ROLE_ID;
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL;
 const GUILD_ID = process.env.DISCORD_GUILD_ID;
+const TEAM_NAME = process.env.TEAM_NAME ?? 'Team';
 const PORT = process.env.PORT ?? '3000';
 
 const commands = [
@@ -90,7 +91,7 @@ const app = express();
 app.use(express.json());
 
 app.get('/', (_req: Request, res: Response) => {
-  res.send('Team Phoenix bot is running.');
+  res.send(`${TEAM_NAME} bot is running.`);
 });
 
 function checkSecret(req: Request, res: Response): boolean {

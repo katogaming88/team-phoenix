@@ -1,7 +1,7 @@
 {
-  "name": "team-phoenix",
+  "name": "guild-team-bot",
   "version": "1.0.0",
-  "description": "Team Phoenix Discord bot",
+  "description": "Discord bot for WoW guild teams (M+ exclusions, roster apps, resend)",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
