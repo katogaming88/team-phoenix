@@ -214,6 +214,168 @@ app.post('/roster', async (req: Request, res: Response): Promise<void> => {
   res.json({ ok: true });
 });
 
+// --- Raid signups ---
+
+interface SignupBody {
+  charName?: string;
+  realm?: string;
+  className?: string;
+  mainSpec?: string;
+  offSpecs?: string;
+  role?: string;
+  discord?: string;
+  notes?: string;
+  submittedAt?: string;
+}
+
+app.post('/signup', async (req: Request, res: Response): Promise<void> => {
+  if (!checkSecret(req, res)) return;
+
+  const { charName, realm, className, mainSpec, offSpecs, role, discord, notes, submittedAt } =
+    req.body as SignupBody;
+
+  if (!charName || !className || !mainSpec) {
+    res.status(400).json({ error: 'Missing required fields: charName, className, mainSpec' });
+    return;
+  }
+
+  const channel = await fetchTextChannel(res);
+  if (!channel) return;
+
+  const unixTs = submittedAt
+    ? Math.floor(new Date(submittedAt).getTime() / 1000)
+    : Math.floor(Date.now() / 1000);
+
+  const embed = new EmbedBuilder()
+    .setColor(0x3498db)
+    .setTitle('New Raid Signup')
+    .addFields(
+      { name: 'Character', value: realm ? `${charName}-${realm}` : charName },
+      { name: 'Class / Main Spec', value: `${className} — ${mainSpec}` },
+      { name: 'Role', value: role ?? 'N/A', inline: true },
+      { name: 'Off Specs', value: offSpecs || '*(none)*', inline: true },
+      { name: 'Discord', value: discord || '*(not provided)*', inline: true },
+      { name: 'Submitted At', value: `<t:${unixTs}:f>` },
+      { name: 'Notes', value: notes || '*(none)*' },
+    )
+    .setFooter({ text: 'Raid Signup System' });
+
+  if (ROSTER_PING_ROLE_ID) {
+    await channel.send({
+      content: `<@&${ROSTER_PING_ROLE_ID}> New raid signup received!`,
+      embeds: [embed],
+    });
+  } else {
+    await channel.send({ embeds: [embed] });
+  }
+
+  res.json({ ok: true });
+});
+
+// --- Self-received item requests ---
+
+interface SelfReceivedBody {
+  player?: string;
+  item?: string;
+  slot?: string;
+  source?: string;
+  notes?: string;
+  submittedAt?: string;
+}
+
+app.post('/selfreceived', async (req: Request, res: Response): Promise<void> => {
+  if (!checkSecret(req, res)) return;
+
+  const { player, item, slot, source, notes, submittedAt } =
+    req.body as SelfReceivedBody;
+
+  if (!player || !item) {
+    res.status(400).json({ error: 'Missing required fields: player, item' });
+    return;
+  }
+
+  const channel = await fetchTextChannel(res);
+  if (!channel) return;
+
+  const unixTs = submittedAt
+    ? Math.floor(new Date(submittedAt).getTime() / 1000)
+    : Math.floor(Date.now() / 1000);
+
+  const embed = new EmbedBuilder()
+    .setColor(0xe67e22)
+    .setTitle('New Self-Received Request')
+    .addFields(
+      { name: 'Player', value: player },
+      { name: 'Item', value: item },
+      { name: 'Slot', value: slot || 'N/A', inline: true },
+      { name: 'Source', value: source || 'N/A', inline: true },
+      { name: 'Submitted At', value: `<t:${unixTs}:f>` },
+      { name: 'Notes', value: notes || '*(none)*' },
+    )
+    .setFooter({ text: 'Self-Received Request System' });
+
+  if (ROSTER_PING_ROLE_ID) {
+    await channel.send({
+      content: `<@&${ROSTER_PING_ROLE_ID}> New self-received request received!`,
+      embeds: [embed],
+    });
+  } else {
+    await channel.send({ embeds: [embed] });
+  }
+
+  res.json({ ok: true });
+});
+
+// --- BiS list submissions ---
+
+interface BiSBody {
+  nameRealm?: string;
+  bisLink?: string;
+  notes?: string;
+  submittedAt?: string;
+}
+
+app.post('/bis', async (req: Request, res: Response): Promise<void> => {
+  if (!checkSecret(req, res)) return;
+
+  const { nameRealm, bisLink, notes, submittedAt } =
+    req.body as BiSBody;
+
+  if (!nameRealm || !bisLink) {
+    res.status(400).json({ error: 'Missing required fields: nameRealm, bisLink' });
+    return;
+  }
+
+  const channel = await fetchTextChannel(res);
+  if (!channel) return;
+
+  const unixTs = submittedAt
+    ? Math.floor(new Date(submittedAt).getTime() / 1000)
+    : Math.floor(Date.now() / 1000);
+
+  const embed = new EmbedBuilder()
+    .setColor(0x1abc9c)
+    .setTitle('New BiS List Submission')
+    .addFields(
+      { name: 'Player', value: nameRealm },
+      { name: 'Submitted At', value: `<t:${unixTs}:f>` },
+      { name: 'BiS List', value: bisLink },
+      { name: 'Notes', value: notes || '*(none)*' },
+    )
+    .setFooter({ text: 'BiS List System' });
+
+  if (ROSTER_PING_ROLE_ID) {
+    await channel.send({
+      content: `<@&${ROSTER_PING_ROLE_ID}> New BiS list submission received!`,
+      embeds: [embed],
+    });
+  } else {
+    await channel.send({ embeds: [embed] });
+  }
+
+  res.json({ ok: true });
+});
+
 app.listen(Number(PORT), () => {
   console.log(`Server listening on port ${PORT}`);
 });
